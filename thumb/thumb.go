@@ -43,11 +43,13 @@ func Get(img io.Reader) ([]byte, error) {
 }
 
 // GetFromURL downloads the image at the given URL and returns the thumbnail in bytes
-func GetFromURL(ctx context.Context, url string) ([]byte, error) {
+func GetFromURL(ctx context.Context, url, useragent string) ([]byte, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set("User-Agent", useragent)
+	req.Header.Set("accept", "image/*")
 
 	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
 	if err != nil {
@@ -58,7 +60,7 @@ func GetFromURL(ctx context.Context, url string) ([]byte, error) {
 	contentType := resp.Header.Get("Content-type")
 	t, _, err := mime.ParseMediaType(contentType)
 	if t != "image" {
-		return nil, fmt.Errorf("unsupported content type: %f", contentType)
+		return nil, fmt.Errorf("unsupported content type: %s", contentType)
 	}
 
 	return Get(resp.Body)
