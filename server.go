@@ -21,6 +21,13 @@ func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	url := r.RequestURI[1:]
+	if strings.HasPrefix(url, "http:/") {
+		http.Redirect(w, r, "/"+url[7:], http.StatusSeeOther)
+		return
+	} else if strings.HasPrefix(url, "https:/") {
+		http.Redirect(w, r, "/"+url[8:], http.StatusSeeOther)
+		return
+	}
 
 	cached, _ := srv.db.GetResponse(url)
 	if cached != nil {
