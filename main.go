@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 
-	browser "github.com/EDDYCJY/fake-useragent"
 	"github.com/razzie/mediaserver/og"
 	"github.com/razzie/mediaserver/thumb"
 )
@@ -28,9 +27,7 @@ func serveMedia(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req.Header.Set("User-Agent", browser.Random())
 	req = req.WithContext(r.Context())
-
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
