@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/dyatlov/go-opengraph/opengraph"
+	"github.com/otiai10/opengraph"
 )
 
 // Metadata holds the most typical OpenGraph metadata
@@ -19,13 +19,13 @@ type Metadata struct {
 
 func newMetadata(og *opengraph.OpenGraph) *Metadata {
 	var image string
-	if len(og.Images) > 0 {
-		image = og.Images[0].URL
+	if len(og.Image) > 0 {
+		image = og.Image[0].URL
 	}
 
 	return &Metadata{
 		Type:        og.Type,
-		URL:         og.URL,
+		URL:         og.URL.String(),
 		Title:       og.Title,
 		Description: og.Description,
 		ImageURL:    image,
@@ -33,9 +33,9 @@ func newMetadata(og *opengraph.OpenGraph) *Metadata {
 }
 
 // Get returns metadata from an io.Reader that contains HTML
-func Get(html io.Reader) (*Metadata, error) {
-	og := opengraph.NewOpenGraph()
-	err := og.ProcessHTML(html)
+func Get(url string, html io.Reader) (*Metadata, error) {
+	og := opengraph.New(url)
+	err := og.Parse(html)
 	if err != nil {
 		return nil, err
 	}
@@ -58,5 +58,5 @@ func GetFromURL(ctx context.Context, url, useragent string) (*Metadata, error) {
 	}
 	defer resp.Body.Close()
 
-	return Get(resp.Body)
+	return Get(url, resp.Body)
 }
