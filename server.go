@@ -1,21 +1,35 @@
 package main
 
 import (
+	"log"
+	"net"
 	"net/http"
 	"strings"
 )
 
 // Server ...
 type Server struct {
-	db *DB
+	db  *DB
+	mux http.ServeMux
 }
 
 // NewServer returns a new server
 func NewServer(db *DB) *Server {
-	return &Server{db: db}
+	srv := &Server{db: db}
+	srv.mux.HandleFunc("/", srv.handleRequest)
+	srv.mux.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "Not found", http.StatusNotFound)
+	})
+	return srv
 }
 
 func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	srv.mux.ServeHTTP(w, r)
+}
+
+func (srv *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
+	logRequest(r)
+
 	if len(r.RequestURI) <= 1 {
 		return
 	}
@@ -57,4 +71,13 @@ func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	cached.serve(w)
 	srv.db.SetResponse(url, cached)
+}
+
+func logRequest(r *http.Request) {
+	ip := r.Header.Get("X-REAL-IP")
+	if len(ip) == 0 {
+		ip, _, _ = net.SplitHostPort(r.RemoteAddr)
+	}
+
+	log.Println(ip, r.RequestURI)
 }
