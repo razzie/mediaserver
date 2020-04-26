@@ -7,6 +7,12 @@ import (
 
 // Server ...
 type Server struct {
+	db *DB
+}
+
+// NewServer returns a new server
+func NewServer(db *DB) *Server {
+	return &Server{db: db}
 }
 
 func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -15,6 +21,13 @@ func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	url := r.RequestURI[1:]
+
+	cached, _ := srv.db.GetResponse(url)
+	if cached != nil {
+		cached.serve(w)
+		return
+	}
+
 	req, err := http.NewRequest("GET", "http://"+url, nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -30,9 +43,11 @@ func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 
 	if strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") {
-		respondMetadata(r.Host, resp.Body).serve(w)
-		return
+		cached = respondMetadata(r.Host, resp.Body)
+	} else {
+		cached = respondThumbnail(resp.Body)
 	}
 
-	respondThumbnail(resp.Body).serve(w)
+	cached.serve(w)
+	srv.db.SetResponse(url, cached)
 }
