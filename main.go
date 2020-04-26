@@ -3,10 +3,11 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io"
 	"log"
-	"mime"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -15,47 +16,29 @@ import (
 	"github.com/razzie/mediaserver/thumb"
 )
 
-// https://gist.github.com/rjz/fe283b02cbaa50c5991e1ba921adf7c9
-func hasContentType(r *http.Response, mimetype string) bool {
-	contentType := r.Header.Get("Content-type")
-	if contentType == "" {
-		return mimetype == "application/octet-stream"
-	}
-
-	for _, v := range strings.Split(contentType, ",") {
-		t, _, err := mime.ParseMediaType(v)
-		if err != nil {
-			break
-		}
-		if t == mimetype {
-			return true
-		}
-	}
-	return false
-}
-
 func serveMedia(w http.ResponseWriter, r *http.Request) {
-	if len(r.URL.Path) <= 1 {
+	if len(r.RequestURI) <= 1 {
 		return
 	}
 
-	url := r.URL.Path[1:]
-	url = strings.Replace(url, ":/", "://", 1)
-
-	req, err := http.NewRequest("GET", url, nil)
+	url := r.RequestURI[1:]
+	req, err := http.NewRequest("GET", "http://"+url, nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 	req.Header.Set("User-Agent", browser.Random())
+	req = req.WithContext(r.Context())
 
-	resp, err := http.DefaultClient.Do(req.WithContext(r.Context()))
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	defer resp.Body.Close()
 
-	if hasContentType(resp, "text/html") {
+	if strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") {
 		serveMetadata(w, r.Host, resp.Body)
 		return
 	}
@@ -71,7 +54,8 @@ func serveMetadata(w http.ResponseWriter, hostname string, src io.Reader) {
 	}
 
 	if len(data.ImageURL) > 0 {
-		data.ImageURL = hostname + "/" + data.ImageURL
+		img, _ := url.Parse(data.ImageURL)
+		data.ImageURL = fmt.Sprintf("http://%s/%s", hostname, img.Hostname()+img.RequestURI())
 	}
 
 	json, _ := json.MarshalIndent(data, "", "  ")
