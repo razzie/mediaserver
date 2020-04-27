@@ -24,6 +24,13 @@ func init() {
 
 }
 
+var (
+	// Size is max width or height of the thumbnail image
+	Size uint = 256
+	// Quality is the thumbnail jpeg quality
+	Quality int = 10
+)
+
 // Get reads an image from an io.Reader and returns the thumbnail in bytes
 func Get(img io.Reader) ([]byte, error) {
 	src, _, err := image.Decode(img)
@@ -31,7 +38,7 @@ func Get(img io.Reader) ([]byte, error) {
 		return nil, err
 	}
 
-	dst := resize.Thumbnail(256, 256, src, resize.NearestNeighbor)
+	dst := resize.Thumbnail(Size, Size, src, resize.NearestNeighbor)
 	var result bytes.Buffer
 
 	err = jpeg.Encode(&result, dst, &jpeg.Options{Quality: 10})

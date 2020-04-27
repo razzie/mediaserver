@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/razzie/mediaserver/thumb"
 )
 
 func main() {
@@ -12,6 +14,8 @@ func main() {
 	redisPw := flag.String("redis-pw", "", "Redis password")
 	redisDb := flag.Int("redis-db", 0, "Redis database (0-15)")
 	port := flag.Int("port", 8080, "http port to listen on")
+	flag.IntVar(&thumb.Quality, "-thumb-quality", 10, "Quality of the thumbnail images (1-100)")
+	flag.UintVar(&thumb.Size, "-thumb-size", 256, "Maximum width or height of thumbnail images")
 	flag.Parse()
 
 	db, err := NewDB(*redisAddr, *redisPw, *redisDb)
