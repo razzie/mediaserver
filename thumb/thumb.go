@@ -21,7 +21,6 @@ func init() {
 	image.RegisterFormat("gif", "gif", gif.Decode, gif.DecodeConfig)
 	image.RegisterFormat("png", "png", png.Decode, png.DecodeConfig)
 	image.RegisterFormat("webp", "webp", webp.Decode, webp.DecodeConfig)
-
 }
 
 var (
@@ -50,12 +49,11 @@ func Get(img io.Reader) ([]byte, error) {
 }
 
 // GetFromURL downloads the image at the given URL and returns the thumbnail in bytes
-func GetFromURL(ctx context.Context, url, useragent string) ([]byte, error) {
+func GetFromURL(ctx context.Context, url string) ([]byte, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", useragent)
 	req.Header.Set("accept", "image/*")
 
 	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
