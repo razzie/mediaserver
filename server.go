@@ -34,12 +34,9 @@ func (srv *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	url := r.RequestURI[1:]
-	if strings.HasPrefix(url, "http:/") {
-		http.Redirect(w, r, "/"+url[7:], http.StatusSeeOther)
-		return
-	} else if strings.HasPrefix(url, "https:/") {
-		http.Redirect(w, r, "/"+url[8:], http.StatusSeeOther)
+	url, changed := removeSchemeFromURL(r.RequestURI[1:])
+	if changed {
+		http.Redirect(w, r, "/"+url, http.StatusSeeOther)
 		return
 	}
 
@@ -80,4 +77,14 @@ func logRequest(r *http.Request) {
 	}
 
 	log.Println(ip, r.RequestURI)
+}
+
+func removeSchemeFromURL(url string) (result string, changed bool) {
+	if index := strings.Index(url, ":/"); index != -1 {
+		if url[index+1:index+2] == "/" {
+			return url[index+2:], true
+		}
+		return url[index+1:], true
+	}
+	return url, false
 }
