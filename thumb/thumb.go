@@ -33,7 +33,7 @@ var (
 	// Size is max width or height of the thumbnail image
 	Size uint = 256
 	// Quality is the thumbnail jpeg quality
-	Quality int = 100
+	Quality int = 90
 )
 
 // Get reads an image from an io.Reader and returns the thumbnail in bytes
