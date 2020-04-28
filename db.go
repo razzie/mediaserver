@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v7"
+	"github.com/razzie/mediaserver/media"
 )
 
 // DB ...
@@ -33,14 +34,14 @@ func NewDB(addr, password string, db int) (*DB, error) {
 	}, nil
 }
 
-// GetResponse returns a saved Response
-func (db *DB) GetResponse(url string) (*Response, error) {
+// GetMedia returns a saved Media
+func (db *DB) GetMedia(url string) (*media.Media, error) {
 	data, err := db.client.Get(url).Result()
 	if err != nil {
 		return nil, err
 	}
 
-	var r Response
+	var r media.Media
 	err = json.Unmarshal([]byte(data), &r)
 	if err != nil {
 		return nil, err
@@ -49,8 +50,8 @@ func (db *DB) GetResponse(url string) (*Response, error) {
 	return &r, nil
 }
 
-// SetResponse saves a Response
-func (db *DB) SetResponse(url string, r *Response) error {
+// SetMedia saves a Media
+func (db *DB) SetMedia(url string, r *media.Media) error {
 	data, err := json.Marshal(r)
 	if err != nil {
 		return err

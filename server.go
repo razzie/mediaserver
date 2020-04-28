@@ -5,6 +5,8 @@ import (
 	"net"
 	"net/http"
 	"strings"
+
+	"github.com/razzie/mediaserver/media"
 )
 
 // Server ...
@@ -40,34 +42,23 @@ func (srv *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cached, _ := srv.db.GetResponse(url)
+	cached, _ := srv.db.GetMedia(url)
 	if cached != nil {
-		cached.serve(w)
+		cached.ServeHTTP(w, r)
 		return
 	}
 
-	req, err := http.NewRequest("GET", "http://"+url, nil)
+	resp, err := media.GetFromURL(r.Context(), url)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
-	}
-
-	req = req.WithContext(r.Context())
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer resp.Body.Close()
-
-	if strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") {
-		cached = respondSiteInfo(r.Host, resp.Body)
 	} else {
-		cached = respondThumbnail(resp.Body)
+		resp.ServeHTTP(w, r)
 	}
 
-	cached.serve(w)
-	srv.db.SetResponse(url, cached)
+	if resp != nil {
+		srv.db.SetMedia(url, resp)
+	}
 }
 
 func logRequest(r *http.Request) {
