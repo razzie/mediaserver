@@ -37,10 +37,10 @@ var (
 )
 
 // Get reads an image from an io.Reader and returns the thumbnail in bytes
-func Get(img io.Reader, label string) ([]byte, error) {
+func Get(img io.Reader, label string) ([]byte, string, error) {
 	src, _, err := image.Decode(img)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	dst := resize.Thumbnail(Size, Size, src, resize.NearestNeighbor)
@@ -51,9 +51,9 @@ func Get(img io.Reader, label string) ([]byte, error) {
 		b := dst.Bounds()
 		width := b.Dx() - 16
 		height := b.Dy() - 16
-		maxLen := width / 7
 
 		if width > 24 && height > 24 {
+			maxLen := width / 7
 			if len(label) > maxLen {
 				label = label[:maxLen] + ".."
 			}
@@ -65,30 +65,30 @@ func Get(img io.Reader, label string) ([]byte, error) {
 	var result bytes.Buffer
 	err = jpeg.Encode(&result, dst, &jpeg.Options{Quality: Quality})
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	return result.Bytes(), nil
+	return result.Bytes(), "image/jpeg", nil
 }
 
 // GetFromURL downloads the image at the given URL and returns the thumbnail in bytes
-func GetFromURL(ctx context.Context, url, label string) ([]byte, error) {
+func GetFromURL(ctx context.Context, url, label string) ([]byte, string, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	req.Header.Set("accept", "image/*")
 
 	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	defer resp.Body.Close()
 
 	contentType := resp.Header.Get("Content-type")
 	t, _, err := mime.ParseMediaType(contentType)
 	if !strings.HasPrefix(t, "image/") {
-		return nil, fmt.Errorf("unsupported content type: %s", contentType)
+		return nil, "", fmt.Errorf("unsupported content type: %s", contentType)
 	}
 
 	return Get(resp.Body, label)

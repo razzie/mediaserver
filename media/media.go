@@ -31,10 +31,10 @@ func GetFromURL(ctx context.Context, url string) (*Media, error) {
 	}
 	defer resp.Body.Close()
 
-	m := &Media{ThumbnailMIME: "image/jpeg"}
+	m := &Media{}
 
 	if !strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") {
-		m.Thumbnail, err = thumb.Get(resp.Body, "")
+		m.Thumbnail, m.ThumbnailMIME, err = thumb.Get(resp.Body, "")
 		return m, err
 	}
 
@@ -47,7 +47,7 @@ func GetFromURL(ctx context.Context, url string) (*Media, error) {
 		return m, fmt.Errorf("no thumbnail available")
 	}
 
-	m.Thumbnail, err = thumb.GetFromURL(ctx, m.SiteInfo.ImageURL, m.SiteInfo.Title)
+	m.Thumbnail, m.ThumbnailMIME, err = thumb.GetFromURL(ctx, m.SiteInfo.ImageURL, m.SiteInfo.Title)
 	return m, err
 }
 
