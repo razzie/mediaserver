@@ -22,7 +22,7 @@ func main() {
 	flag.StringVar(&RedisPw, "redis-pw", "", "Redis password")
 	flag.IntVar(&RedisDb, "redis-db", 0, "Redis database (0-15)")
 	flag.IntVar(&Port, "port", 8080, "HTTP port to listen on")
-	flag.IntVar(&thumb.Quality, "-thumb-quality", 10, "Quality of the thumbnail images (1-100)")
+	flag.IntVar(&thumb.Quality, "-thumb-quality", 25, "Quality of the thumbnail images (1-100)")
 	flag.UintVar(&thumb.Size, "-thumb-size", 256, "Maximum width or height of thumbnail images")
 	flag.Parse()
 
