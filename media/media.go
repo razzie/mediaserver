@@ -14,8 +14,8 @@ import (
 // Media contains basic details about a website and a thumbnail
 type Media struct {
 	SiteInfo      *siteinfo.SiteInfo `json:"siteinfo"`
-	Thumbnail     []byte             `json:"thumbnail`
-	ThumbnailMIME string             `json:"thumbnail_mime`
+	Thumbnail     []byte             `json:"thumbnail"`
+	ThumbnailMIME string             `json:"thumbnail_mime"`
 }
 
 // GetFromURL tries to get media data from an URL
