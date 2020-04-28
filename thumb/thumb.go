@@ -13,6 +13,7 @@ import (
 	"io"
 	"mime"
 	"net/http"
+	"strings"
 
 	"github.com/nfnt/resize"
 	"golang.org/x/image/font"
@@ -52,7 +53,7 @@ func Get(img io.Reader, label string) ([]byte, error) {
 		height := b.Dy() - 16
 		maxLen := width / 7
 
-		if maxLen >= 2 {
+		if width > 24 && height > 24 {
 			if len(label) > maxLen {
 				label = label[:maxLen] + ".."
 			}
@@ -86,7 +87,7 @@ func GetFromURL(ctx context.Context, url, label string) ([]byte, error) {
 
 	contentType := resp.Header.Get("Content-type")
 	t, _, err := mime.ParseMediaType(contentType)
-	if t != "image" {
+	if !strings.HasPrefix(t, "image/") {
 		return nil, fmt.Errorf("unsupported content type: %s", contentType)
 	}
 
