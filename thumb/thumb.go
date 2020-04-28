@@ -57,7 +57,7 @@ func Get(img io.Reader, label string) ([]byte, string, error) {
 			if len(label) > maxLen {
 				label = label[:maxLen] + ".."
 			}
-			addLabel(dst, 8, height+8, color.Black, label)
+			addLabel(dst, 7, height+7, color.Black, label)
 			addLabel(dst, 6, height+6, color.White, label)
 		}
 	}
