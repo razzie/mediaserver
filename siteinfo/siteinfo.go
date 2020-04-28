@@ -44,12 +44,11 @@ func Get(html io.Reader) (*SiteInfo, error) {
 }
 
 // GetFromURL returns SiteInfo from an URL
-func GetFromURL(ctx context.Context, url, useragent string) (*SiteInfo, error) {
+func GetFromURL(ctx context.Context, url string) (*SiteInfo, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", useragent)
 	req.Header.Set("accept", "text/html")
 
 	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
