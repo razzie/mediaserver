@@ -49,7 +49,7 @@ func respondMetadata(hostname string, src io.Reader) *Response {
 }
 
 func respondThumbnail(src io.Reader) *Response {
-	thumb, err := thumb.Get(src)
+	thumb, err := thumb.Get(src, "")
 	if err != nil {
 		return &Response{Error: err.Error()}
 	}
