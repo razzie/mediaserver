@@ -1,4 +1,4 @@
-package og
+package siteinfo
 
 import (
 	"context"
@@ -8,8 +8,8 @@ import (
 	"github.com/dyatlov/go-opengraph/opengraph"
 )
 
-// Metadata holds the most typical OpenGraph metadata
-type Metadata struct {
+// SiteInfo holds the most typical details about a website (if found)
+type SiteInfo struct {
 	Type        string `json:"type"`
 	URL         string `json:"url"`
 	Title       string `json:"title"`
@@ -17,13 +17,13 @@ type Metadata struct {
 	ImageURL    string `json:"image"`
 }
 
-func newMetadata(og *opengraph.OpenGraph) *Metadata {
+func newSiteInfo(og *opengraph.OpenGraph) *SiteInfo {
 	var image string
 	if len(og.Images) > 0 {
 		image = og.Images[0].URL
 	}
 
-	return &Metadata{
+	return &SiteInfo{
 		Type:        og.Type,
 		URL:         og.URL,
 		Title:       og.Title,
@@ -32,19 +32,19 @@ func newMetadata(og *opengraph.OpenGraph) *Metadata {
 	}
 }
 
-// Get returns metadata from an io.Reader that contains HTML
-func Get(html io.Reader) (*Metadata, error) {
+// Get returns SiteInfo from an io.Reader that contains HTML
+func Get(html io.Reader) (*SiteInfo, error) {
 	og := opengraph.NewOpenGraph()
 	err := og.ProcessHTML(html)
 	if err != nil {
 		return nil, err
 	}
 
-	return newMetadata(og), nil
+	return newSiteInfo(og), nil
 }
 
-// GetFromURL returns metadata from an URL
-func GetFromURL(ctx context.Context, url, useragent string) (*Metadata, error) {
+// GetFromURL returns SiteInfo from an URL
+func GetFromURL(ctx context.Context, url, useragent string) (*SiteInfo, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err

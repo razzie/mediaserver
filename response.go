@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/razzie/mediaserver/og"
+	"github.com/razzie/mediaserver/siteinfo"
 	"github.com/razzie/mediaserver/thumb"
 )
 
@@ -30,8 +30,8 @@ func (r Response) serve(w http.ResponseWriter) {
 	w.Write(r.Data)
 }
 
-func respondMetadata(hostname string, src io.Reader) *Response {
-	data, err := og.Get(src)
+func respondSiteInfo(hostname string, src io.Reader) *Response {
+	data, err := siteinfo.Get(src)
 	if err != nil {
 		return &Response{Error: err.Error()}
 	}

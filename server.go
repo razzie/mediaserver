@@ -61,7 +61,7 @@ func (srv *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 
 	if strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") {
-		cached = respondMetadata(r.Host, resp.Body)
+		cached = respondSiteInfo(r.Host, resp.Body)
 	} else {
 		cached = respondThumbnail(resp.Body)
 	}
