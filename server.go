@@ -30,7 +30,7 @@ func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (srv *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
-	logRequest(r)
+	defer logRequest(r)
 
 	if len(r.RequestURI) <= 1 {
 		return
@@ -51,7 +51,6 @@ func (srv *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 	resp, err := media.GetFromURL(r.Context(), url)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	} else {
 		resp.ServeHTTP(w, r)
 	}
