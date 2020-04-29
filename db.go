@@ -37,7 +37,7 @@ func NewDB(addr, password string, db int) (*DB, error) {
 
 // GetMedia returns a saved Media
 func (db *DB) GetMedia(url string) (*media.Media, error) {
-	data, err := db.client.Get(strings.ToLower(url)).Result()
+	data, err := db.client.Get(urlToKey(url)).Result()
 	if err != nil {
 		return nil, err
 	}
@@ -58,5 +58,13 @@ func (db *DB) SetMedia(url string, r *media.Media) error {
 		return err
 	}
 
-	return db.client.Set(strings.ToLower(url), string(data), db.ExpirationTime).Err()
+	return db.client.SetNX(urlToKey(url), string(data), db.ExpirationTime).Err()
+}
+
+func urlToKey(url string) string {
+	url = strings.ToLower(url)
+	if url[len(url)-1] == '/' {
+		url = url[:len(url)-1]
+	}
+	return url
 }
