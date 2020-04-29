@@ -88,7 +88,7 @@ func GetFromURL(ctx context.Context, url, label string) ([]byte, string, error) 
 	contentType := resp.Header.Get("Content-type")
 	t, _, err := mime.ParseMediaType(contentType)
 	if !strings.HasPrefix(t, "image/") {
-		return nil, "", fmt.Errorf("unsupported content type: %s", contentType)
+		return nil, "", fmt.Errorf("unsupported image content type: %s (%s)", contentType, url)
 	}
 
 	return Get(resp.Body, label)

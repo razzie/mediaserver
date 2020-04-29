@@ -109,6 +109,9 @@ tokenize:
 
 				switch a {
 				case atom.Meta:
+					if len(s.Description) == 0 && m["name"] == "description" {
+						m["property"] = "og:description"
+					}
 					s.ProcessMeta(m["property"], m["content"])
 
 				case atom.Img:
@@ -133,8 +136,11 @@ tokenize:
 		case html.EndTagToken:
 			name, _ := z.TagName()
 			a := atom.Lookup(name)
-			if parents[len(parents)-1] == a {
-				parents = parents[:len(parents)-1]
+			for i := len(parents) - 1; i >= 0; i-- {
+				if parents[i] == a {
+					parents = parents[:i]
+					break
+				}
 			}
 
 		case html.TextToken:
