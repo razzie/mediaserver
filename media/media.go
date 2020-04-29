@@ -3,6 +3,7 @@ package media
 import (
 	"context"
 	"fmt"
+	"hash/crc32"
 	"net/http"
 	"strconv"
 	"strings"
@@ -59,6 +60,12 @@ func (m Media) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if len(m.Thumbnail) == 0 {
 		http.Error(w, "no thumbnail available", http.StatusNotFound)
 		return
+	}
+
+	if m.SiteInfo != nil {
+		crc := crc32.ChecksumIEEE([]byte(m.SiteInfo.URL))
+		filename := strconv.FormatUint(uint64(crc), 36) + "." + m.ThumbnailMIME[6:]
+		w.Header().Set("Content-Disposition", "filename="+filename)
 	}
 
 	w.Header().Set("Content-Type", m.ThumbnailMIME)
