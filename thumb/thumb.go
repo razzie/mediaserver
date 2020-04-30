@@ -15,9 +15,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/golang/freetype"
 	"github.com/nfnt/resize"
-	"golang.org/x/image/font"
-	"golang.org/x/image/font/basicfont"
 	"golang.org/x/image/math/fixed"
 	"golang.org/x/image/webp"
 )
@@ -112,11 +111,12 @@ func addLabel(img image.Image, x, y int, col color.Color, label string) {
 		Y: fixed.Int26_6(y * 64),
 	}
 
-	d := &font.Drawer{
-		Dst:  img.(draw.Image),
-		Src:  image.NewUniform(col),
-		Face: basicfont.Face7x13,
-		Dot:  point,
-	}
-	d.DrawString(label)
+	c := freetype.NewContext()
+	c.SetDPI(72)
+	c.SetFont(Font)
+	c.SetFontSize(13)
+	c.SetClip(img.Bounds())
+	c.SetDst(img.(draw.Image))
+	c.SetSrc(image.NewUniform(col))
+	c.DrawString(label, point)
 }
