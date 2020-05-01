@@ -14,11 +14,11 @@ import (
 
 // SiteInfo holds the most typical details about a website (if found)
 type SiteInfo struct {
-	Type        string `json:"type"`
-	URL         string `json:"url"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	ImageURL    string `json:"image"`
+	Type        string   `json:"type"`
+	URL         string   `json:"url"`
+	Title       string   `json:"title"`
+	Description string   `json:"description"`
+	Images      []string `json:"images"`
 }
 
 // ProcessMeta updates the SiteInfo based on OpenGraph property name and content
@@ -37,17 +37,21 @@ func (s *SiteInfo) ProcessMeta(property, content string) {
 	case "og:url":
 		s.URL = content
 	case "og:image", "og:image:url":
-		s.ImageURL = content
+		s.Images = append(s.Images, content)
 	}
 }
 
-// ResolveImageURL resolves a potentially relative image URL using the given hostname
-func (s *SiteInfo) ResolveImageURL(hostname string) error {
-	if strings.Contains(s.ImageURL, "://") {
+func resolveImageURL(img *string, hostname string) error {
+	if strings.Contains(*img, "://") {
 		return nil
 	}
 
-	imgURL, err := url.Parse(s.ImageURL)
+	if strings.HasPrefix(*img, "//") {
+		*img = "http:" + *img
+		return nil
+	}
+
+	imgURL, err := url.Parse(*img)
 	if err != nil {
 		return err
 	}
@@ -57,12 +61,16 @@ func (s *SiteInfo) ResolveImageURL(hostname string) error {
 		return err
 	}
 
-	s.ImageURL = hostURL.ResolveReference(imgURL).String()
+	*img = hostURL.ResolveReference(imgURL).String()
 	return nil
 }
 
-func (s *SiteInfo) isReady() bool {
-	return len(s.Title) > 0 && len(s.ImageURL) > 0
+// ResolveImageURLs resolves a potentially relative image URLs using the given hostname
+func (s *SiteInfo) ResolveImageURLs(hostname string) {
+	for i := 0; i < len(s.Images); i++ {
+		img := &s.Images[i]
+		resolveImageURL(img, hostname)
+	}
 }
 
 // Get returns SiteInfo from an io.Reader that contains HTML
@@ -70,7 +78,6 @@ func Get(buffer io.Reader) (*SiteInfo, error) {
 	s := &SiteInfo{}
 	z := html.NewTokenizer(buffer)
 	base := ""
-	inBody := false
 	parents := make([]atom.Atom, 0, 10)
 	hasParent := func(p atom.Atom) bool {
 		for _, a := range parents {
@@ -96,9 +103,6 @@ tokenize:
 			a := atom.Lookup(name)
 
 			switch a {
-			case atom.Body:
-				inBody = true
-
 			case atom.Meta, atom.Img, atom.Base:
 				m := make(map[string]string)
 				var key, val []byte
@@ -115,13 +119,12 @@ tokenize:
 					s.ProcessMeta(m["property"], m["content"])
 
 				case atom.Img:
-					if len(s.ImageURL) == 0 && !hasParent(atom.A) {
+					if !hasParent(atom.A) {
 						url := m["src"]
-						if strings.Contains(url, "://") {
-							s.ImageURL = url
-						} else {
-							s.ImageURL = path.Join(base, url)
+						if !strings.Contains(url, "://") && !strings.HasPrefix(url, "//") {
+							url = path.Join(base, url)
 						}
+						s.Images = append(s.Images, url)
 					}
 
 				case atom.Base:
@@ -144,13 +147,9 @@ tokenize:
 			}
 
 		case html.TextToken:
-			if !inBody && len(s.Title) == 0 && hasParent(atom.Title) {
+			if len(s.Title) == 0 && hasParent(atom.Title) {
 				s.Title = string(z.Text())
 			}
-		}
-
-		if inBody && s.isReady() {
-			break
 		}
 	}
 

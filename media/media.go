@@ -44,15 +44,19 @@ func GetFromURL(ctx context.Context, url string) (*Media, error) {
 		return m, err
 	}
 
-	if len(m.SiteInfo.ImageURL) == 0 {
+	if len(m.SiteInfo.Images) == 0 {
 		return m, fmt.Errorf("no thumbnail available")
 	}
 
-	if err = m.SiteInfo.ResolveImageURL("http://" + url); err != nil {
-		return m, err
+	m.SiteInfo.ResolveImageURLs("http://" + url)
+
+	for _, img := range m.SiteInfo.Images {
+		m.Thumbnail, m.ThumbnailMIME, err = thumb.GetFromURL(ctx, img, m.SiteInfo.Title)
+		if err == nil {
+			return m, nil
+		}
 	}
 
-	m.Thumbnail, m.ThumbnailMIME, err = thumb.GetFromURL(ctx, m.SiteInfo.ImageURL, m.SiteInfo.Title)
 	return m, err
 }
 
