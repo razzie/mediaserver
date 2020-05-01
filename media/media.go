@@ -20,12 +20,21 @@ type Media struct {
 
 // GetFromURL tries to get media data from an URL
 func GetFromURL(ctx context.Context, url string) (*Media, error) {
-	req, err := http.NewRequest("GET", "http://"+url, nil)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
+	cl := http.Client{}
+	cl.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		if len(via) > 10 {
+			return fmt.Errorf("too many redirects")
+		}
+		url = req.URL.String()
+		return nil
+	}
+
+	resp, err := cl.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +56,7 @@ func GetFromURL(ctx context.Context, url string) (*Media, error) {
 		return m, fmt.Errorf("no thumbnail available")
 	}
 
-	m.SiteInfo.ResolveImageURLs("http://" + url)
+	m.SiteInfo.ResolveImageURLs(url)
 
 	for _, img := range m.SiteInfo.Images {
 		m.Thumbnail, err = thumb.GetFromURL(ctx, img, m.SiteInfo.Title)

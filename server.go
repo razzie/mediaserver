@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net"
 	"net/http"
@@ -48,14 +49,14 @@ func (srv *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := media.GetFromURL(r.Context(), url)
+	resp, err := media.GetFromURL(r.Context(), "http://"+url)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	} else {
 		resp.ServeHTTP(w, r)
 	}
 
-	if resp != nil {
+	if resp != nil && err != context.Canceled {
 		srv.db.SetMedia(url, resp)
 	}
 }
