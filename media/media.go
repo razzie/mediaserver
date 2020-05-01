@@ -14,9 +14,8 @@ import (
 
 // Media contains basic details about a website and a thumbnail
 type Media struct {
-	SiteInfo      *siteinfo.SiteInfo `json:"siteinfo"`
-	Thumbnail     []byte             `json:"thumbnail"`
-	ThumbnailMIME string             `json:"thumbnail_mime"`
+	SiteInfo  *siteinfo.SiteInfo `json:"siteinfo"`
+	Thumbnail *thumb.Thumbnail   `json:"thumbnail"`
 }
 
 // GetFromURL tries to get media data from an URL
@@ -35,7 +34,7 @@ func GetFromURL(ctx context.Context, url string) (*Media, error) {
 	m := &Media{}
 
 	if !strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") {
-		m.Thumbnail, m.ThumbnailMIME, err = thumb.Get(resp.Body, "")
+		m.Thumbnail, err = thumb.Get(resp.Body, "")
 		return m, err
 	}
 
@@ -51,7 +50,7 @@ func GetFromURL(ctx context.Context, url string) (*Media, error) {
 	m.SiteInfo.ResolveImageURLs("http://" + url)
 
 	for _, img := range m.SiteInfo.Images {
-		m.Thumbnail, m.ThumbnailMIME, err = thumb.GetFromURL(ctx, img, m.SiteInfo.Title)
+		m.Thumbnail, err = thumb.GetFromURL(ctx, img, m.SiteInfo.Title)
 		if err == nil {
 			return m, nil
 		}
@@ -61,18 +60,16 @@ func GetFromURL(ctx context.Context, url string) (*Media, error) {
 }
 
 func (m Media) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if len(m.Thumbnail) == 0 {
+	if m.Thumbnail == nil {
 		http.Error(w, "no thumbnail available", http.StatusNotFound)
 		return
 	}
 
 	if m.SiteInfo != nil {
 		crc := crc32.ChecksumIEEE([]byte(m.SiteInfo.URL))
-		filename := strconv.FormatUint(uint64(crc), 36) + "." + m.ThumbnailMIME[6:]
+		filename := strconv.FormatUint(uint64(crc), 36) + "." + m.Thumbnail.MIME[6:]
 		w.Header().Set("Content-Disposition", "filename="+filename)
 	}
 
-	w.Header().Set("Content-Type", m.ThumbnailMIME)
-	w.Header().Set("Content-Length", strconv.Itoa(len(m.Thumbnail)))
-	w.Write(m.Thumbnail)
+	m.Thumbnail.ServeHTTP(w, r)
 }

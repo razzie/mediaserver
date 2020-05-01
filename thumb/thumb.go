@@ -13,6 +13,7 @@ import (
 	"io"
 	"mime"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/golang/freetype"
@@ -35,11 +36,24 @@ var (
 	Quality int = 90
 )
 
-// Get reads an image from an io.Reader and returns the thumbnail in bytes
-func Get(img io.Reader, label string) ([]byte, string, error) {
+// Thumbnail contains a thumbnail image in bytes + the MIME type and bounds
+type Thumbnail struct {
+	Data   []byte          `json:"data"`
+	MIME   string          `json:"mime"`
+	Bounds image.Rectangle `json:"bounds"`
+}
+
+func (t Thumbnail) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", t.MIME)
+	w.Header().Set("Content-Length", strconv.Itoa(len(t.Data)))
+	w.Write(t.Data)
+}
+
+// Get reads an image from an io.Reader and returns the thumbnail
+func Get(img io.Reader, label string) (*Thumbnail, error) {
 	src, _, err := image.Decode(img)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	dst := resize.Thumbnail(Size, Size, src, resize.NearestNeighbor)
@@ -64,30 +78,34 @@ func Get(img io.Reader, label string) ([]byte, string, error) {
 	var result bytes.Buffer
 	err = jpeg.Encode(&result, dst, &jpeg.Options{Quality: Quality})
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
-	return result.Bytes(), "image/jpeg", nil
+	return &Thumbnail{
+		Data:   result.Bytes(),
+		MIME:   "image/jpeg",
+		Bounds: dst.Bounds(),
+	}, nil
 }
 
-// GetFromURL downloads the image at the given URL and returns the thumbnail in bytes
-func GetFromURL(ctx context.Context, url, label string) ([]byte, string, error) {
+// GetFromURL downloads the image at the given URL and returns the thumbnail
+func GetFromURL(ctx context.Context, url, label string) (*Thumbnail, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 	req.Header.Set("accept", "image/*")
 
 	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	contentType := resp.Header.Get("Content-type")
 	t, _, err := mime.ParseMediaType(contentType)
 	if !strings.HasPrefix(t, "image/") {
-		return nil, "", fmt.Errorf("unsupported image content type: %s (%s)", contentType, url)
+		return nil, fmt.Errorf("unsupported image content type: %s (%s)", contentType, url)
 	}
 
 	return Get(resp.Body, label)
