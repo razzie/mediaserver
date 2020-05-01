@@ -42,23 +42,28 @@ func (db *DB) GetMedia(url string) (*media.Media, error) {
 		return nil, err
 	}
 
-	var r media.Media
-	err = json.Unmarshal([]byte(data), &r)
+	var m media.Media
+	err = json.Unmarshal([]byte(data), &m)
 	if err != nil {
 		return nil, err
 	}
 
-	return &r, nil
+	return &m, nil
 }
 
 // SetMedia saves a Media
-func (db *DB) SetMedia(url string, r *media.Media) error {
-	data, err := json.Marshal(r)
+func (db *DB) SetMedia(url string, m *media.Media) error {
+	data, err := json.Marshal(m)
 	if err != nil {
 		return err
 	}
 
-	return db.client.SetNX(urlToKey(url), string(data), db.ExpirationTime).Err()
+	expiration := db.ExpirationTime
+	if m.Thumbnail == nil {
+		expiration = time.Minute
+	}
+
+	return db.client.SetNX(urlToKey(url), string(data), expiration).Err()
 }
 
 func urlToKey(url string) string {
