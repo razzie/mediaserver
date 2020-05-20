@@ -77,7 +77,7 @@ func (m Media) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if m.SiteInfo != nil {
 		crc := crc32.ChecksumIEEE([]byte(m.SiteInfo.URL))
 		filename := strconv.FormatUint(uint64(crc), 36) + "." + m.Thumbnail.MIME[6:]
-		w.Header().Set("Content-Disposition", "filename="+filename)
+		w.Header().Set("Content-Disposition", fmt.Sprintf("inline; filename=%q", filename))
 	}
 
 	m.Thumbnail.ServeHTTP(w, r)
