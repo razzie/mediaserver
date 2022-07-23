@@ -16,15 +16,15 @@ type DB struct {
 }
 
 // NewDB returns a new DB
-func NewDB(addr, password string, db int) (*DB, error) {
-	client := redis.NewClient(&redis.Options{
-		Addr:     addr,
-		Password: password,
-		DB:       db,
-	})
-
-	err := client.Ping().Err()
+func NewDB(redisUrl string) (*DB, error) {
+	opt, err := redis.ParseURL(redisUrl)
 	if err != nil {
+		return nil, err
+	}
+
+	client := redis.NewClient(opt)
+
+	if err := client.Ping().Err(); err != nil {
 		client.Close()
 		return nil, err
 	}
@@ -43,8 +43,7 @@ func (db *DB) GetMedia(url string) (*media.Media, error) {
 	}
 
 	var m media.Media
-	err = json.Unmarshal([]byte(data), &m)
-	if err != nil {
+	if err := json.Unmarshal([]byte(data), &m); err != nil {
 		return nil, err
 	}
 

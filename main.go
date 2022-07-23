@@ -12,24 +12,20 @@ import (
 
 // Command-line args
 var (
-	RedisAddr     string
-	RedisPw       string
-	RedisDb       int
+	RedisConnStr  string
 	Port          int
 	CacheDuration time.Duration
 )
 
 func main() {
-	flag.StringVar(&RedisAddr, "redis-addr", "localhost:6379", "Redis hostname:port")
-	flag.StringVar(&RedisPw, "redis-pw", "", "Redis password")
-	flag.IntVar(&RedisDb, "redis-db", 0, "Redis database (0-15)")
+	flag.StringVar(&RedisConnStr, "redis", "redis://localhost:6379", "Redis connection string")
 	flag.IntVar(&Port, "port", 8080, "HTTP port to listen on")
 	flag.IntVar(&thumb.Quality, "thumb-quality", 90, "Quality of the thumbnail images (1-100)")
 	flag.UintVar(&thumb.Size, "thumb-size", 256, "Maximum width or height of thumbnail images")
 	flag.DurationVar(&CacheDuration, "cache-duration", time.Hour*24, "Thumbnail cache expiration time")
 	flag.Parse()
 
-	db, err := NewDB(RedisAddr, RedisPw, RedisDb)
+	db, err := NewDB(RedisConnStr)
 	if err != nil {
 		log.Fatalln("failed to connect to database:", err)
 	}
